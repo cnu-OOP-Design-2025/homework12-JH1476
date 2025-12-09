@@ -12,14 +12,40 @@ private:
     static std::mutex write_mtx;
     std::ofstream logFile;
 
+    Logger() {
+        logFile.open("Test/output2.txt", std::ios::trunc);
+        if(logFile.is_open()) {
+            logFile << "[Init] Logger started." << std::endl;
+        }
+    }
+
 
 public:
+
+    ~Logger() {
+        std::lock_guard<std::mutex> lock(init_mtx);
+        if(logFile.is_open()) {
+            logFile << "[Shutdown] Logger closed." << std::endl;
+            logFile.close();
+        }
+    }
+
+    Logger(const Logger&) = delete;
+    Logger& operator= (const Logger&) = delete;
+
     static Logger* getInstance(const std::string& filename = "Test/output2.txt") {
-        return nullptr;
+        std::lock_guard<std::mutex> lock(init_mtx);
+        if (instance == nullptr) {
+            instance = std::unique_ptr<Logger>(new Logger());
+        }
+        return instance.get();
     }
 
     void log(const std::string& message) {
-        /* TODO */
+        std::lock_guard<std::mutex> lock(init_mtx);
+        if(logFile.is_open()) {
+            logFile << message << std::endl;
+        }
     }
 
 };
